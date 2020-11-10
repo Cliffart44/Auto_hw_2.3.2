@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import static com.codeborne.selenide.Condition.*;
 import static com.codeborne.selenide.Selenide.*;
 import static io.restassured.RestAssured.given;
-import static ru.netology.util.DataHelper.*;
+import static ru.netology.util.DataHelper.User.*;
 
 public class PageUiTest {
     private String name = getUsername();
