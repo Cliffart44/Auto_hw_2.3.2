@@ -1,71 +1,50 @@
 package ru.netology.test;
 
-import io.restassured.http.ContentType;
-
+import com.codeborne.selenide.SelenideElement;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.openqa.selenium.Keys;
 
 import static com.codeborne.selenide.Condition.*;
 import static com.codeborne.selenide.Selenide.*;
-import static io.restassured.RestAssured.given;
 import static ru.netology.util.DataHelper.User.*;
 
 public class PageUiTest {
-    private String name = getUsername();
-    private String password = getPassword();
+    SelenideElement submitButton = $("[data-test-id='action-login'] .button__text");
+    SelenideElement errorMessage = $("[data-test-id='error-notification'] .notification__content");
 
     @BeforeEach
     void setUp() {
-        given()
-                .baseUri("http://localhost:9999")
-                .contentType(ContentType.JSON)
-                .body(activeUser())
-                .when()
-                .post("/api/system/users")
-                .then()
-                .statusCode(200);
+        activeUserRegistration();
         open("http://localhost:9999/");
-
+        $("[data-test-id='login'] .input__control").setValue(getUsername());
+        $("[data-test-id='password'] .input__control").setValue(getPassword());
     }
 
     @Test
     void shouldSucceedLogin() {
-        $("[data-test-id='login'] .input__control").setValue(name);
-        $("[data-test-id='password'] .input__control").setValue(password);
-        $("[data-test-id='action-login'] .button__text").click();
+        submitButton.click();
         $$("h2").findBy(text("Личный кабинет")).shouldBe(visible);
     }
 
     @Test
     void shouldNotSucceedLoginByName() {
-        $("[data-test-id='login'] .input__control").setValue(name + "i");
-        $("[data-test-id='password'] .input__control").setValue(password);
-        $("[data-test-id='action-login'] .button__text").click();
-        $("[data-test-id='error-notification'] .notification__content").shouldHave(text("Ошибка! Неверно указан логин или пароль")).shouldBe(visible);
+        $("[data-test-id='login'] .input__control").sendKeys(Keys.chord(Keys.SHIFT, Keys.HOME), Keys.BACK_SPACE, getAnotherUsername());
+        submitButton.click();
+        errorMessage.shouldBe(visible).shouldHave(text("Ошибка! Неверно указан логин или пароль"));
     }
 
     @Test
     void shouldNotSucceedLoginByPassword() {
-        $("[data-test-id='login'] .input__control").setValue(name);
-        $("[data-test-id='password'] .input__control").setValue(password + "i");
-        $("[data-test-id='action-login'] .button__text").click();
-        $("[data-test-id='error-notification'] .notification__content").shouldHave(text("Ошибка! Неверно указан логин или пароль")).shouldBe(visible);
+        $("[data-test-id='password'] .input__control").sendKeys(Keys.chord(Keys.SHIFT, Keys.HOME), Keys.BACK_SPACE, getAnotherPassword());
+        submitButton.click();
+        errorMessage.shouldBe(visible).shouldHave(text("Ошибка! Неверно указан логин или пароль"));
     }
 
     @Test
     void shouldNotSucceedLoginByBlock() {
-        given()
-                .baseUri("http://localhost:9999")
-                .contentType(ContentType.JSON)
-                .body(inactiveUser())
-                .when()
-                .post("/api/system/users")
-                .then()
-                .statusCode(200);
-
-        $("[data-test-id='login'] .input__control").setValue(name);
-        $("[data-test-id='password'] .input__control").setValue(password);
-        $("[data-test-id='action-login'] .button__text").click();
-        $("[data-test-id='error-notification'] .notification__content").shouldHave(text("Ошибка! Пользователь заблокирован")).shouldBe(visible);
+        inactiveUserRegistration();
+        submitButton.click();
+        errorMessage.shouldBe(visible).shouldHave(text("Ошибка! Пользователь заблокирован"));
     }
 }
